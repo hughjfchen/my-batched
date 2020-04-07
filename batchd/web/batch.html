@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>batchd web client</title>
+
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <!-- jQuery rest -->
+    <script src="/js/jquery.rest.min.js"></script>
+
+    <link rel='stylesheet' type='text/css' href='/css/style.css'/>
+
+  </head>
+  <body>
+    <h1>batchd web client</h1>
+
+    <div class="content">
+      <div id='queue_filter'>
+        <label for="queuelist">Queue:</label>
+        <select id="queuelist" onchange='onQueueSelected()'>
+        </select>
+        <label for='selectstatus'>Status:</label>
+        <select id='selectstatus' onchange='getJobs()'>
+          <option value='all' selected>All</option>
+          <option value='new'>New</option>
+          <option value='waiting'>Waiting</option>
+          <option value='processing'>Processing</option>
+          <option value='done'>Done</option>
+          <option value='failed'>Failed</option>
+          <option value='postponed'>Postponed</option>
+        </select>
+        <input type='button' onclick='getJobs()' value='Refresh'/>
+      </div>
+      <div id='queue_info'>
+        Schedule: <span id='schedule_name'></span>
+        Host: <span id='host_name'></span>
+      </div>
+      <table id='jobslist'>
+        <thead><tr>
+            <td>ID</td><td>#</td><td>Type</td><td>Host</td><td>Status</td><td>Create time</td><td>Finish time</td><td>User</td>
+        </tr></thead>
+      </table>
+      <div>
+        Statistics: <span id='queue_stats'></span>
+      </div>
+
+      <div id='viewjob'>
+        <p>Job details:</p>
+        <table id='viewjob_details'>
+          <tr><td>ID: </td><td id='viewjob_id'></td></tr>
+          <tr><td>Sequence #: </td><td id='viewjob_seq'></td></tr>
+          <tr><td>Type: </td><td id='viewjob_type'></td></tr>
+          <tr><td>Host: </td><td id='viewjob_host'></td></tr>
+          <tr><td>User: </td><td id='viewjob_user'></td></tr>
+          <tr><td>Status: </td><td id='viewjob_status'></td></tr>
+          <tr><td>Create time: </td><td id='viewjob_created'></td></tr>
+          <tr><td>Finish time: </td><td id='viewjob_finished'></td></tr>
+          <tr><td>Retry count: </td><td id='viewjob_try'></td></tr>
+        </table>
+        <p>Job parameters:</p>
+        <table id='viewparams'>
+        </table>
+        <p>Output:</p>
+        <div id='stdout'></div>
+        <p>Errors:</p>
+        <div id='stderr'></div>
+        <input type='button' value='Close' onclick='hideJob()'/>
+      </div>
+
+      <div id='addjob'>
+        <p>
+          <label for='selecttype'>Job type:</label>
+          <select id='selecttype' onchange='fillEnqueueForm()'></select>
+          <label for='selecthost'>Host:</label>
+          <select id='selecthost'></select>
+        </p>
+        <table id='jobparams'>
+        </table>
+        <input type='button' onclick='enqueueJob()' value='Enqueue'/>
+      </div>
+    </div>
+
+    <script>
+$.batchd = new $.RestClient('/');
+
+$.batchd.add('queue', {'stringifyData': true});
+$.batchd.queue.add('jobs');
+$.batchd.queue.add('type');
+$.batchd.queue.type.add('host');
+$.batchd.add('type');
+$.batchd.add('stats');
+//$.batchd.add('host');
+
+function fillQueues() {
+  $.batchd.queue.read().done(function(data) {
+    $.each(data, function(k,v) {
+      if (! k) {
+        $.default_queue = v.name;
+      }
+      var on = v.enabled ? "[*]" : "[ ]";
+      var text = on + " " + v.title;
+      $('#queuelist').append(
+          $('<option>').val(v.name).text(text)
+        );
+    });
+    onQueueSelected();
+  });
+};
+
+function fillHosts() {
+  var qname = $('#queuelist').val();
+  if (! qname) {
+    qname = $.default_queue;
+  }
+  var type = $('#selecttype').val();
+  if (! type) {
+    type = $.default_job_type;
+  }
+  //alert(type);
+  if (type) {
+    $.batchd.queue.type.host.read(qname, type).done(onHostListReceived);
+  }
+};
+
+function onHostListReceived(data) {
+    $('#selecthost').empty();
+    $.each(data, function(k,v) {
+      if (v == '__default__') {
+        $('#selecthost').append(
+            $('<option>').val("*").text("<Use default for this queue>")
+          );
+      } else {
+        $('#selecthost').append(
+            $('<option>').val(v).text(v)
+          );
+      }
+    });
+}
+
+function onQueueSelected() {
+  var qname = $('#queuelist').val();
+  if (! qname) {
+    qname = $.default_queue;
+  }
+  $.batchd.queue.read(qname).done(function(queue) {
+    $('#schedule_name').text(queue.schedule_name);
+    var host = queue.host_name ? queue.host_name : "*";
+    $('#host_name').text(host);
+  });
+  getJobs();
+  $.batchd.queue.type.read(qname).done(function(data) {
+    $('#selecttype>option').remove();
+    $.each(data, function(k,v) {
+      if (! k) {
+        $.default_job_type = v.name;
+      }
+      var title = v.title;
+      if (! title) {
+        title = v.name;
+      }
+      $('#selecttype').append(
+          $('<option>').val(v.name).text(title)
+        );
+    });
+    fillEnqueueForm();
+  });
+};
+
+$(document).ready(function() {
+  fillQueues();
+  $.default_job_type = $('#selecttype').val();
+  fillHosts();
+});
+
+function getJobs() {
+  var qname = $('#queuelist').val();
+  var status = $('#selectstatus').val();
+  $.batchd.queue.jobs.read(qname, {'status': status}).done(function(data) {
+    $('#jobslist>tr').remove();
+    $.each(data, function(k,v) {
+      var host = v.host_name;
+      if (! host) {
+        host = '*';
+      }
+      var html = '<td>' + v.id + '</td><td>'
+                             + v.seq + '</td><td>'
+                             + v.type + '</td><td>'
+                             + host + '</td><td>'
+                             + v.status + '</td><td>'
+                             + v.create_time + '</td><td>'
+                             + v.result_time + '</td><td>'
+                             + v.user_name + '</td>'
+      $('#jobslist').append(
+          $('<tr>').addClass(v.status).append(html).click(showJob(v))
+        );
+    });
+  });
+  $.batchd.stats.read(qname).done(function(stats) {
+    var n_new = stats['new'] || 0;
+    var n_processing = stats['processing'] || 0;
+    var n_done = stats['done'] || 0;
+    var n_failed = stats['failed'] || 0;
+    var text = 'New: ' + n_new + ', Processing: ' + n_processing + ', Done: ' + n_done + ', Failed: ' + n_failed;
+    $('#queue_stats').text(text);
+
+  });
+};
+
+setInterval(getJobs, 5*1000);
+
+function showJob(job) {
+  return function(data) {
+    $('#viewparams').empty();
+    $('#viewjob_id').text(job.id);
+    $('#viewjob_seq').text(job.seq);
+    $('#viewjob_type').text(job.type);
+    var host = job.host_name;
+    if (! host) {
+      host = '*';
+    }
+    $('#viewjob_host').text(host);
+    $('#viewjob_user').text(job.user_name);
+    $('#viewjob_status').text(job.status);
+    $('#viewjob_created').text(job.create_time);
+    $('#viewjob_finished').text(job.result_time);
+    $('#viewjob_try').text(job.try_count);
+    for (var name in job.params) {
+      var value = job.params[name];
+      $('#viewparams').append(
+          $('<tr>').append(
+            $('<td>').text(name)
+          ).append(
+            $('<td>').text(value)
+          )
+      );
+    }
+    $('#stdout').text(job.stdout);
+    $('#stderr').text(job.stderr);
+    $('#viewjob').show();
+  };
+};
+
+function hideJob() {
+  $('#viewjob').hide();
+};
+
+function fillEnqueueForm() {
+  fillHosts();
+  var type = $('#selecttype').val();
+  if (! type) {
+    type = $.default_job_type;
+  }
+  $.batchd.type.read(type).done(function(data) {
+    $('#jobparams').empty();
+    $.each(data.params, function(k,v) {
+      //var id = 'param_' + v.name;
+      var input = $('<input>').attr('name', v.name);
+      /*if (v.type == 'InputFile' || v.type == 'OutputFile') {
+        input.attr('type', 'file');
+      }*/
+      if (v.default) {
+        input.val(v.default);
+      }
+      $('#jobparams').append(
+          $('<tr>').append(
+            $('<td>').text(v.title)
+          ).append(
+            $('<td>').append(
+              input
+            )
+          )
+      );
+    });
+  });
+};
+
+function enqueueJob() {
+  var type = $('#selecttype').val();
+  var qname = $('#queuelist').val();
+  var host = $('#selecthost').val();
+  var params = {};
+  $('#jobparams>tr>td>input').each(function(k, input) {
+    params[input.name] = input.value;
+  });
+  var job = {
+    'queue': qname,
+    'type': type,
+    'params': params
+  };
+  if (host != '*') {
+    job['host_name'] = host;
+  }
+  //alert(job);
+  $.batchd.queue.create(qname, job);
+  getJobs();
+};
+    </script>
+  </body>
+</html>

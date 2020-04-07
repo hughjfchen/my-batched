@@ -1,0 +1,318 @@
+batchd manager REST API documentation
+=====================================
+
+The API tries to follow REST practices. It uses POST to add things,   PUT to
+update them,   DELETE to delete things and GET to obtain information. In some
+cases,   additional URL parameters (?name=value) are used.
+For dangerous requests,   API may return 403 response code if it is not sure that
+you really meant this action. To make it sure,   one should provide ?forced=true
+URL parameter.
+
+Authentication
+--------------
+
+URL: /
+Method: OPTIONS
+Permissions required: none
+
+Returns a list of supported authentication methods. Possible values are "basic"
+(for basic HTTP authentication) and "header" (authentication via X-Auth-User:
+HTTP header). Empty list means no authentication is required.
+
+Example response:
+
+    ["basic"]
+
+This method itself is always available without authentication. So it can be
+used as preflight check, to know which authentication method to use.
+
+Statistic information
+---------------------
+
+URL: /stats
+Method: GET
+Permissions required: ManageJobs without restriction by queue
+
+Returns a dictionary. Each entry has form "queue name": status_info.
+status_info is a dictionary,   where keys are possible statuses of jobs (new,  
+processing,   done,   failed),   and values are counts of jobs in that statuses.
+
+Example response:
+
+    {"free":{"done":3,  "failed":3}}
+
+This means that there is only one queue,   named "free",   and it contains 3 "done"
+jobs and 3 "failed".
+
+URL: /stats/:name
+Method: GET
+Permissions required: ManageJobs for specified queue or without restriction by queue
+
+Similar to /stats,   but returns only information about named queue.
+
+Queues
+------
+
+URL: /queue
+Method: GET
+Permissions required: ViewQueues for at least some queues. Only queues to which user
+has access will be returned.
+
+Returns list of defined queues. Each record is a dictionary with the following
+fields:
+
+* name
+* schedule_name
+* host_name
+
+URL: /queue
+Method: POST
+Permissions required: ManageQueues
+
+Create new job queue. In request body,   one must provide a dictionary describing
+new queue.
+Example request:
+
+    {"name":"free",  "schedule_name":"anytime",  "host_name":"free"}
+
+URL: /queue/:name
+Method: GET
+Permissions required: ViewQueues
+
+Get information about specified queue. Returns one dictionary.
+
+URL: /queue/:name/jobs
+Method: GET
+Permissions required: ViewJobs
+
+Obtain a list of jobs in named queue. By default,   only jobs in status "new" are
+listed. One may change this by providing ?status=x URL parameter. ?status=all
+is also supported. Each record of returned list is a dictionary with the
+following keys:
+
+* id - unique job ID
+* seq - sequential number of this job in this queue
+* type
+* queue
+* status
+* exit_code
+* create_time
+* result_time
+* stdout
+* stderr
+* host_name
+* try_count - number of attempts that were done to execute this job
+* params - a dictionary with job parameters values
+
+URL: /queue/:name
+Method: POST
+Permissions required: CreateJobs for this queue and job type or without restriction
+
+Put a new job into named queue. In request body,   one must provide a dictionary
+describing new job. The dictionary must have at least the following keys:
+
+* type
+* params (if job has parameters)
+
+`id',   `queue' and 'seq' keys are ignored even if provided.
+
+URL: /queue/:name
+Method: PUT
+Permissions required: ManageJobs
+
+Modify named job queue. Request body is similar to "add new queue" call.
+
+URL: /queue/:name/type
+Method: GET
+Permissions required: CreateJobs for at least some job types
+
+Obtain list of job types which can be created in specified queue by currently
+authenticated user. All details of job types are returned.
+
+URL: /queue/:name/host
+Method: GET
+Permissions required: CreateJobs for at least some hosts
+
+Obtain list of host names where currently authenticated user can create at
+least some type of jobs. A special `__default__` value is used to indicate
+default host of queue.
+
+Example response:
+
+    ["__default__", "renderer"]
+
+URL: /queue/:name
+Method: DELETE
+Permissions required: ManageQueues
+
+Delete named job queue. Returns 403 if the queue is not empty and there is no
+?forced=true parameter. With ?forced=true,   will delete queue with all contained
+jobs.
+
+Jobs
+----
+
+URL: /jobs
+Method: GET
+Permissions required: ViewJobs without restriction by queue
+
+Return a list of all jobs in all queues. By default,   only jobs in status "new"
+are returned. One may change it with ?status=x URL parameter. ?status=all is
+also supported.
+
+URL: /job/:id
+Method: GET
+Permissions required: ViewJobs for queue to which this job belongs
+
+Return information about specified job execution results. Returned is a
+dictionary with the following fields:
+
+* job_id
+* exit_code
+* stdout
+* stderr
+* time
+
+Returns 404 if job was not executed yet.
+
+URL: /job/:id/results
+Method: GET
+Permissions required: ViewJobs for queue to which this job belongs
+
+Return information about all executions of speciifed job.
+
+URL: /job/:id/results/last
+Method: GET
+Permissions required: ViewJobs for queue to which this job belongs
+
+Return information about last execution of specified job.
+
+URL: /job/:id
+Method: DELETE
+Permissions required: ManageJobs
+
+Delete specified job. This does not ask for any confirmation.
+
+Schedules
+---------
+
+URL: /schedule
+Method: GET
+Permissions required: ViewSchedules
+
+Return a list of defined schedules. Each record is a dictionary with the following keys:
+
+* name
+* weekdays - list of weekdays when job execution is allowed. null means "any weekday".
+* time - list of time periods when job execution is allowed. null means "any time of day".
+
+Example response:
+
+    [{"time": [{"begin": "08:00:00",  "end": "18:00:00"}],  "weekdays": ["Monday", 
+    "Tuesday",  "Wednesday",  "Thursday",  "Friday"],  "name": "working.hours"}]
+
+URL: /schedule
+Method: POST
+Permissions required: ManageSchedules
+
+Create a new schedule. In request body,  one should provide a dictionary
+describing the new schedule. Dictionary format is the same as for GET call.
+
+URL: /schedule/:name
+Method: DELETE
+Permissions required: ManageSchedules
+
+Delete existing schedule. Returns 403 if named schedule is used by queues and
+there is no ?forced=true parameter. With ?forced=true,  this will delete the
+schedule and all queues using it and all jobs in them.
+
+Job types
+---------
+
+URL: /type
+Method: GET
+Permissions required: none
+
+Return list of all defined job types. Example response:
+
+    [{"on_fail": {"retry": {"count": 1, "when": "now"}}, "params": [{"default":
+    "", "name": "count", "title": "count", "type": "Integer"}], "name":
+    "count", "template": "./test.sh $count", "host_name": null}]
+
+URL: /type/:name
+Method: GET
+Permissions required: none
+
+Similar to /type, but returns only information about named job type.
+
+User permissions
+----------------
+
+URL: /user
+Method: GET
+Permissions required: SuperUser
+
+Obtain list of all user names.
+
+URL: /user
+Method: POST
+Permissions required: SuperUser
+
+Create new user. Accepted is dictionary with following keys:
+
+* name
+* password
+
+Please note that password is transferred in clear text. So this is secure only
+if connection is secured with HTTPS.
+
+URL: /user/:name
+Method: PUT
+Permissions required: :name == current user, or SuperUser
+
+Change user password. Accepted is a dictionary with following keys:
+
+* name - not used
+* password - new password
+
+Please note that password is transferred in clear text. So this is secure only
+if connection is secured with HTTPS.
+
+URL: /user/:name/permissions
+Method: GET
+Permissions required: SuperUser
+
+Obtain list of permissions for specified user. Returned is a list of pairs:
+
+* Permission ID
+* Permission description - a dictionary with following keys:
+  * user_name
+  * permission. Possible values are:
+    * SuperUser
+    * CreateJobs
+    * ViewJobs
+    * ManageJobs
+    * ViewQueues
+    * ManageQueues
+    * ViewSchedules
+    * ManageSchedules
+  * queue_name - name of queue to which this permission applies. null means any
+    queue.
+  * type_name - name of job type to which this permission applies. null means any
+    job type.
+  * host_name - name of host to which this permission applies. null means any host.
+    `__default__` means default host of queue.
+
+Example response:
+    
+    [[8,{"host_name":null,"type_name":null,"permission":"ViewJobs","user_name":"dummy","queue_name":"laptop"}],
+     [9,{"host_name":null,"type_name":null,"permission":"ViewQueues","user_name":"dummy","queue_name":null}],
+     [10,{"host_name":null,"type_name":null,"permission":"ViewSchedules","user_name":"dummy","queue_name":null}],
+     [11,{"host_name":null,"type_name":"blender","permission":"CreateJobs","user_name":"dummy","queue_name":"laptop"}]]
+
+URL: /user/:name/permissions
+Method: POST
+Permissions required: SuperUser
+
+Grant new permission to the user. Accepted is a dictionary of format specified above. user_name field is not used.
+
