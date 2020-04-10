@@ -17,11 +17,35 @@ else
 fi
 
 set +e
+myGroup1=$(awk -F":" '{print $1}' /etc/group | grep -w postgres)
+set -e
+if [ "X${myGroup1}" = "X" ]; then
+    info "no postgres group defined yet, create it..."
+    sudo groupadd -f --gid 999 postgres
+fi
+
+set +e
+myUser1=$(awk -F":" '{print $1}' /etc/passwd | grep -w postgres)
+set -e
+if [ "X${myUser1}" = "X" ]; then
+    info "no postgres user defined yet, create it..."
+    sudo useradd -G docker -m -p Passw0rd --uid 999 --gid 999 postgres
+fi
+
+if [ ! -d /var/postgres ]; then
+    info "no /var/postgres directory found, create it..."
+    sudo mkdir -p /var/postgres/data
+    sudo chmod 700 /var/postgres/data
+    sudo mkdir -p /var/postgres/config
+    sudo chown -R postgres:postgres /var/postgres
+fi
+
+set +e
 myGroup2=$(awk -F":" '{print $1}' /etc/group | grep -w batchd)
 set -e
 if [ "X${myGroup2}" = "X" ]; then
     info "no batchd group defined yet, create it..."
-    sudo groupadd -f --gid 90001 batchd
+    sudo groupadd -f --gid 90002 batchd
 fi
 
 set +e
@@ -29,13 +53,15 @@ myUser2=$(awk -F":" '{print $1}' /etc/passwd | grep -w batchd)
 set -e
 if [ "X${myUser2}" = "X" ]; then
     info "no batchd user defined yet, create it..."
-    sudo useradd -G docker -m -p Passw0rd --uid 90001 --gid 90001 batchd
+    sudo useradd -G docker -m -p Passw0rd --uid 90002 --gid 90002 batchd
 fi
 
 if [ ! -d /var/batchd ]; then
     info "no /var/batchd directory found, create it..."
     sudo mkdir -p /var/batchd/data
     sudo mkdir -p /var/batchd/config
+    sudo cp -R ${SCRIPT_ABS_PATH}/config/* /var/batchd/config/
+    sudo cp -R ${SCRIPT_ABS_PATH}/../../../../web /var/batchd/data/
     sudo chown -R batchd:batchd /var/batchd
 fi
 

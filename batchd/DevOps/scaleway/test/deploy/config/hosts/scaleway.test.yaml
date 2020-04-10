@@ -1,0 +1,8 @@
+name: scaleway.test
+host_name: my-x64-dev-deb
+port: 22
+user_name: chenjf
+public_key: /home//chenjf/.ssh/id_rsa.pub
+private_key: /home/chenjf/.ssh/id_rsa
+input_directory: /var/batchd/data/input
+output_directory: /var/batchd/data/output

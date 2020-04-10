@@ -49,13 +49,13 @@ let
 
   passwd = ''
     root:x:0:0::/root:/run/current-system/sw/bin/bash
-    batchd:x:90001:90001::/var/empty:/run/current-system/sw/bin/nologin
+    batchd:x:90002:90002::/var/empty:/run/current-system/sw/bin/nologin
   '';
 
   group = ''
     root:x:0:
     nogroup:x:65534:
-    batchd:x:90001:batchd
+    batchd:x:90002:batchd
   '';
 
   nsswitch = ''
@@ -92,14 +92,14 @@ let
     "PARA2="
     ];
     User = "batchd";
-    Cmd = [ "${static-batchd}/bin/batchd" ];
+    Cmd = [ "${static-batchd}/bin/batchd" "--config" "/var/batchd/config/batchd.yaml" ];
     ExposedPorts = {
       "9681/tcp" = {};
     };
-    WorkingDir = "/data";
+    WorkingDir = "/var/batchd/data";
     Volumes = {
-      "/data" = {};
-      "/etc/batchd" = {};
+      "/var/batchd/data" = {};
+      "/var/batchd/config" = {};
     };
   };
 };

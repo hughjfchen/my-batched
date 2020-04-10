@@ -16,16 +16,36 @@ if [ -d /var/batchd ]; then
 fi
 
 set +e
-myUser2=$(awk -F":" '{print $1}' /etc/passwd | grep -w batchd)
-if [ "X${myUser2}" != "X" ]; then
+myUser1=$(awk -F":" '{print $1}' /etc/passwd | grep -w batchd)
+if [ "X${myUser1}" != "X" ]; then
     info "batchd user defined, delete it..."
     sudo userdel -fr batchd
 fi
 
-myGroup2=$(awk -F":" '{print $1}' /etc/group | grep -w batchd)
-if [ "X${myGroup2}" != "X" ]; then
+myGroup1=$(awk -F":" '{print $1}' /etc/group | grep -w batchd)
+if [ "X${myGroup1}" != "X" ]; then
     info "batchd group defined, delete it..."
     sudo groupdel -f batchd
+fi
+set -e
+
+if [ -d /var/postgres ]; then
+    info "/var/postgres directory found, delete it..."
+    sudo rm -fr /var/postgres
+fi
+
+
+set +e
+myUser2=$(awk -F":" '{print $1}' /etc/passwd | grep -w postgres)
+if [ "X${myUser2}" != "X" ]; then
+    info "postgres user defined, delete it..."
+    sudo userdel -fr postgres
+fi
+
+myGroup2=$(awk -F":" '{print $1}' /etc/group | grep -w postgres)
+if [ "X${myGroup2}" != "X" ]; then
+    info "postgres group defined, delete it..."
+    sudo groupdel -f postgres
 fi
 set -e
 

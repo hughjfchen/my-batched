@@ -2,7 +2,7 @@
 
 version: '2'
 services:
-  batchd:
+  manager:
     image: batchd:0.1.0.0
     ports:
       - "9681:9681"
@@ -12,7 +12,24 @@ services:
     environment:
       PARA1: XXXXX
       PARA2: YYYYY
-    command: static_batchd_nix_store_path/bin/batchd
+    command: static_batchd_nix_store_path/bin/batchd --config /var/batchd/config/batchd.yaml manager
+    volumes:
+      - "batchd_config_path:/var/batchd/config"
+      - "batchd_data_path:/var/batchd/data"
+    depends_on:
+      - db
+    restart: unless-stopped
+  dispatcher:
+    image: batchd:0.1.0.0
+    #ports:
+    #  - "9681:9681"
+    links:
+      - db:db
+    user: batchd
+    environment:
+      PARA1: XXXXX
+      PARA2: YYYYY
+    command: static_batchd_nix_store_path/bin/batchd --config /var/batchd/config/batchd.yaml dispatcher
     volumes:
       - "batchd_config_path:/var/batchd/config"
       - "batchd_data_path:/var/batchd/data"
@@ -27,9 +44,9 @@ services:
     environment:
       POSTGRES_DB: batchd
       POSTGRES_USER: batchd
-      POSTGRES_PASSWORD: PTM_POSTGRES_DB_PASSWORD
+      POSTGRES_PASSWORD: batchd
     command: postgres -c 'timezone=Asia/Shanghai'
     volumes:
-      - "depend_service_path:/var/lib/depend_service_path"
-      - "depend_service_data_path:/depend_service_data"
+      - "/var/postgres/data:/var/lib/postgresql/data"
+      - "/var/postgres/config:/docker-entrypoint-initdb.d"
     restart: unless-stopped
