@@ -12,9 +12,9 @@ services:
     environment:
       PARA1: XXXXX
       PARA2: YYYYY
-    command: static_batchd_nix_store_path/bin/batchd --config /var/batchd/config/batchd.yaml manager
+    command: static_batchd_nix_store_path/bin/batchd manager
     volumes:
-      - "batchd_config_path:/var/batchd/config"
+      - "batchd_config_path:/etc/batchd"
       - "batchd_data_path:/var/batchd/data"
     depends_on:
       - db
@@ -29,9 +29,9 @@ services:
     environment:
       PARA1: XXXXX
       PARA2: YYYYY
-    command: static_batchd_nix_store_path/bin/batchd --config /var/batchd/config/batchd.yaml dispatcher
+    command: static_batchd_nix_store_path/bin/batchd dispatcher
     volumes:
-      - "batchd_config_path:/var/batchd/config"
+      - "batchd_config_path:/etc/batchd"
       - "batchd_data_path:/var/batchd/data"
     depends_on:
       - db

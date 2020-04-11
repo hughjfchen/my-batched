@@ -8,7 +8,7 @@ import Data.Yaml
 import System.IO
 
 import Batchd.Core.Common.Types
-import Batchd.Core.Common.Localize
+-- import Batchd.Core.Common.Localize
 import Batchd.Core.Common.Config
 import Batchd.Common.Types
 
@@ -45,10 +45,10 @@ getPassword prompt = do
 -- Make sure that entered passwords are equal.
 getPassword2 :: IO String
 getPassword2 = do
-  pwd1 <- getPassword =<< (__s "Password: ")
-  pwd2 <- getPassword =<< (__s "Password again: ")
+  pwd1 <- getPassword "Password: "
+  pwd2 <- getPassword "Password again: "
   if pwd1 /= pwd2
-    then fail =<< (__s "passwords do not match")
+    then fail "passwords do not match"
     else return pwd1
 
 -- | Execute IO actions with enabled\/disabled terminal echo,

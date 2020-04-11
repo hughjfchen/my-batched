@@ -59,6 +59,8 @@ fi
 if [ ! -d /var/batchd ]; then
     info "no /var/batchd directory found, create it..."
     sudo mkdir -p /var/batchd/data
+    sudo mkdir -p /var/batchd/data/input
+    sudo mkdir -p /var/batchd/data/output
     sudo mkdir -p /var/batchd/config
     sudo cp -R ${SCRIPT_ABS_PATH}/config/* /var/batchd/config/
     sudo cp -R ${SCRIPT_ABS_PATH}/../../../../web /var/batchd/data/
