@@ -41,7 +41,7 @@ main = do
           Nothing -> return ()
           Just path -> $(Log.putMessage config_level) "Using global configuration file: {}" (Single path)
         $(Log.putMessage config_level) "Loaded global configuration file: {}" (Single $ show cfg')
-        connectPool
+        _ <- connectPool
         setupMetrics
         case mode of
           Manager    -> Manager.runManager

@@ -8,6 +8,7 @@ connection_string: "host=db port=5432 user=batchd password=batchd"
 
 # Logging settings
 logging:
+  target: stdout
   # Log message format
   # Available variables are:
   # * level
@@ -27,7 +28,7 @@ logging:
   
   # default logging level
   # possible values (severity increasing): config debug info warning error fatal disable
-  level: config
+  level: info
 
   # More precise filter.
   # You can specify logging level for each program module
@@ -95,8 +96,8 @@ metrics:
 
 storage:
     # How long to store executed (Done) jobs, in days
-    done_jobs: 10
+    done_jobs: 7
 
     # How long to store metric records, in days
-    metric_records: 2
+    metric_records: 3
 

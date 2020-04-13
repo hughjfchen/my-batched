@@ -62,6 +62,14 @@ if [ ! -d /var/batchd ]; then
     sudo mkdir -p /var/batchd/data/input
     sudo mkdir -p /var/batchd/data/output
     sudo mkdir -p /var/batchd/config
+    sudo mkdir -p /var/batchd/home/.ssh
+    sudo touch /var/batchd/home/.ssh/known_hosts
+    info "Initializing the default ssh environment for the batchd dispatcher based on the current user who's doing the deployment."
+    CURRENT_HOME=${HOME}
+    [ -f ${CURRENT_HOME}/.ssh/id_rsa.pub ] && sudo cp ${CURRENT_HOME}/.ssh/id_rsa.pub /var/batchd/home/.ssh/
+    [ -f ${CURRENT_HOME}/.ssh/id_rsa ] && sudo cp ${CURRENT_HOME}/.ssh/id_rsa /var/batchd/home/.ssh/
+    [ -f ${CURRENT_HOME}/.ssh/known_hosts ] && sudo cp ${CURRENT_HOME}/.ssh/known_hosts /var/batchd/home/.ssh/
+    [ -f /var/batchd/home/.ssh/id_rsa ] && sudo chmod 600 /var/batchd/home/.ssh/id_rsa
     sudo cp -R ${SCRIPT_ABS_PATH}/config/* /var/batchd/config/
     sudo cp -R ${SCRIPT_ABS_PATH}/../../../../web /var/batchd/data/
     sudo chown -R batchd:batchd /var/batchd
@@ -71,13 +79,14 @@ sudo cp ${SCRIPT_ABS_PATH}/docker-compose.yml /var/batchd/docker-compose-batchd.
 sudo chown batchd:batchd /var/batchd/docker-compose-batchd.yml.orig
 
 sudo sed "s:batchd_config_path:/var/batchd/config:g" < /var/batchd/docker-compose-batchd.yml.orig | sudo su -p -c "dd of=/var/batchd/docker-compose-batchd.yml.01" batchd 
-sudo sed "s:batchd_data_path:/var/batchd/data:g" < /var/batchd/docker-compose-batchd.yml.01 | sudo su -p -c "dd of=/var/batchd/docker-compose-batchd.yml" batchd
+sudo sed "s:batchd_data_path:/var/batchd/data:g" < /var/batchd/docker-compose-batchd.yml.01 | sudo su -p -c "dd of=/var/batchd/docker-compose-batchd.yml.02" batchd
+sudo sed "s:batchd_home_path:/var/batchd/home:g" < /var/batchd/docker-compose-batchd.yml.02 | sudo su -p -c "dd of=/var/batchd/docker-compose-batchd.yml" batchd
 
 if [ -L ${SCRIPT_ABS_PATH}/../../../../result ]; then
     batchd_IMAGE_ID=$(sudo sg docker -c "docker images"|grep -w batchd|awk '{print $3}')
     cmdPath=$(sudo sg docker -c "docker image inspect ${batchd_IMAGE_ID}" | grep "/nix/store/" | awk -F"/" '{print "/nix/store/"$4}')
-    sudo sed "s:static_batchd_nix_store_path:${cmdPath}:g" < /var/batchd/docker-compose-batchd.yml | sudo su -p -c "dd of=/var/batchd/docker-compose-batchd.yml.02" batchd
-    sudo cat /var/batchd/docker-compose-batchd.yml.02 | sudo su -p -c "dd of=/var/batchd/docker-compose-batchd.yml" batchd
+    sudo sed "s:static_batchd_nix_store_path:${cmdPath}:g" < /var/batchd/docker-compose-batchd.yml | sudo su -p -c "dd of=/var/batchd/docker-compose-batchd.yml.03" batchd
+    sudo cat /var/batchd/docker-compose-batchd.yml.03 | sudo su -p -c "dd of=/var/batchd/docker-compose-batchd.yml" batchd
 fi
 
 done_banner "batchd" "deploy prepare"

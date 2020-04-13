@@ -2,7 +2,7 @@ name: detachmentsoft
 host_name: detachmentsoft.xyz
 port: 22
 user_name: chenjf
-public_key: /etc/batchd/keys/id_rsa.pub
-private_key: /etc/batchd/keys/id_rsa
-input_directory: /var/batchd/data/input
-output_directory: /var/batchd/data/output
+# public_key: /etc/batchd/keys/id_rsa.pub
+# private_key: /etc/batchd/keys/id_rsa
+# input_directory: /var/batchd/data/input
+# output_directory: /var/batchd/data/output

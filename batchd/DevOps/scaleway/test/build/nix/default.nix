@@ -202,7 +202,7 @@ divert	258	DIVERT		# Divert pseudo-protocol
 
   passwd = ''
     root:x:0:0::/root:/run/current-system/sw/bin/bash
-    batchd:x:90002:90002::/var/empty:/run/current-system/sw/bin/nologin
+    batchd:x:90002:90002::/home/batchd:/run/current-system/sw/bin/nologin
   '';
 
   group = ''
@@ -246,7 +246,7 @@ divert	258	DIVERT		# Divert pseudo-protocol
     "PARA2="
     ];
     User = "batchd";
-    Cmd = [ "${static-batchd}/bin/batchd" "--config" "/var/batchd/config/batchd.yaml" ];
+    Cmd = [ "${static-batchd}/bin/batchd" ];
     ExposedPorts = {
       "9681/tcp" = {};
     };
@@ -254,6 +254,7 @@ divert	258	DIVERT		# Divert pseudo-protocol
     Volumes = {
       "/var/batchd/data" = {};
       "/var/batchd/config" = {};
+      "/var/batchd/home" = {};
     };
   };
 };

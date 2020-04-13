@@ -16,6 +16,7 @@ services:
     volumes:
       - "batchd_config_path:/etc/batchd"
       - "batchd_data_path:/var/batchd/data"
+      - "batchd_home_path:/home/batchd"
     depends_on:
       - db
     restart: unless-stopped
@@ -33,6 +34,7 @@ services:
     volumes:
       - "batchd_config_path:/etc/batchd"
       - "batchd_data_path:/var/batchd/data"
+      - "batchd_home_path:/home/batchd"
     depends_on:
       - db
     restart: unless-stopped

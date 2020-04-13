@@ -2,7 +2,7 @@
 driver: awsec2
 enable_start_stop: true
 credentials:
-  path: /home/user/.aws/credentials
+  path: /home/batchd/.aws/credentials
   profile: batchd
   # Or you can directly specify keys:
   #access_key: access_key = AXXXXXXXXXXX

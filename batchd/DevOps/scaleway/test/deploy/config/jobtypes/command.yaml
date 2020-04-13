@@ -5,4 +5,4 @@ params:
     type: String
   - name: args
     type: String
-on_fail: retry
+on_fail: continue

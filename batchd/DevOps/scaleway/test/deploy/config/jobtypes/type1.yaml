@@ -1,6 +1,0 @@
-name: type1
-template: "gcc $key"
-params:
-  - name: key
-    type: String
-on_fail: retry
