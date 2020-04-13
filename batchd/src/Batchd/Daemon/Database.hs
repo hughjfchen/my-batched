@@ -45,10 +45,10 @@ import Batchd.Daemon.Schedule
 getPool :: GlobalConfig -> LoggingTState -> IO Sql.ConnectionPool
 getPool cfg lts =
   case dbcDriver cfg of
-    Sqlite -> runLoggingT (Sqlite.createSqlitePool (dbcConnectionString cfg) 1) lts
+    Sqlite -> runLoggingT (Sqlite.createSqlitePool (dbcConnectionString cfg) (dbcPoolSize cfg)) lts
     PostgreSql -> do
         let str = TE.encodeUtf8 (dbcConnectionString cfg)
-        runLoggingT (Postgres.createPostgresqlPool str 10) lts
+        runLoggingT (Postgres.createPostgresqlPool str (dbcPoolSize cfg)) lts
 
 connectPool :: Daemon Sql.ConnectionPool
 connectPool = do

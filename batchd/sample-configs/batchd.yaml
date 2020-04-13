@@ -4,10 +4,12 @@
 
 # Sqlite is also available
 driver: PostgreSql
-connection_string: "host=localhost port=5432 user=batchd password=batchd" 
+connection_string: "host=localhost port=5432 user=batchd password=batchd"
+pool_size: 10
 
 # Logging settings
 logging:
+  target: stdout
   # Log message format
   # Available variables are:
   # * level

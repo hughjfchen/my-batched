@@ -5,6 +5,7 @@
 # Sqlite is also available
 driver: PostgreSql
 connection_string: "host=db port=5432 user=batchd password=batchd" 
+pool_size: 5 
 
 # Logging settings
 logging:
