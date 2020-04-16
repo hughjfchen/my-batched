@@ -61,7 +61,8 @@ manager:
         # NB: this parameter is supposed to be set once, before first users are created.
         # For security reasons it is better to specify unique value for each installation.
         # If you change this parameter, all existing user passwords will become invalid!
-        static_salt: "sdjf@OIH&OIHjihhih8YY"
+        # static_salt: "sdjf@OIH&OIHjihhih8YY"
+        static_salt: "1234567890abcdef"
 
     web_client:
         # Path to web client files (batch.html and companion js and css files).

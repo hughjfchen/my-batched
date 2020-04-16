@@ -7,7 +7,7 @@
 mkDerivation {
   pname = "batchd-core";
   version = "0.1.0.0";
-  src = /home/chenjf/projects/my-batched/batchd/DevOps/local/dev/build/../../../../batchd-core;
+  src = /home/chenjf/projects/my-batched/batchd/DevOps/scaleway/test/build/../../../../batchd-core;
   libraryHaskellDepends = [
     aeson base bytestring containers dates directory filepath
     heavy-logger hsyslog localize mtl persistent persistent-template
